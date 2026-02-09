@@ -1,0 +1,328 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AI Customer Support API — Serverless (Lambda + API Gateway + RDS)
+  カスタマーハラスメント対策 API のAWS サーバーレス構成
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.12
+    MemorySize: 256
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        DB_HOST: !GetAtt CustomerSupportDB.Endpoint.Address
+        DB_PORT: !GetAtt CustomerSupportDB.Endpoint.Port
+        DB_NAME: customer_support
+        DB_USER: !Ref DBUsername
+        DB_PASSWORD: !Ref DBPassword
+        ANTHROPIC_API_KEY: !Ref AnthropicAPIKey
+        ENVIRONMENT: !Ref Environment
+    Layers:
+      - !Ref CommonLayer
+    VpcConfig:
+      SecurityGroupIds:
+        - !Ref LambdaSecurityGroup
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [production, staging, development]
+  DBUsername:
+    Type: String
+    Default: csadmin
+    NoEcho: true
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+  AnthropicAPIKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+
+# =============================================================================
+# Resources
+# =============================================================================
+Resources:
+
+  # ---------------------------------------------------------------------------
+  # VPC & Networking
+  # ---------------------------------------------------------------------------
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-vpc
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-private-1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-private-2
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.10.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-public-1
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  # NAT Gateway for Lambda → Internet access
+  NatEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: VPCGatewayAttachment
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  # ---------------------------------------------------------------------------
+  # Security Groups
+  # ---------------------------------------------------------------------------
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Lambda functions
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+
+  # ---------------------------------------------------------------------------
+  # RDS (PostgreSQL)
+  # ---------------------------------------------------------------------------
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets for RDS
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  CustomerSupportDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub ${AWS::StackName}-db
+      DBInstanceClass: db.t3.micro
+      Engine: postgres
+      EngineVersion: '16.1'
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBName: customer_support
+      AllocatedStorage: 20
+      StorageType: gp3
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      DeletionProtection: false
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ---------------------------------------------------------------------------
+  # S3 Bucket (Static Assets / Logs)
+  # ---------------------------------------------------------------------------
+  AssetsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-assets-${AWS::AccountId}
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET]
+            AllowedOrigins: ['*']
+            MaxAge: 3600
+
+  # ---------------------------------------------------------------------------
+  # Lambda Layer (shared utilities)
+  # ---------------------------------------------------------------------------
+  CommonLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub ${AWS::StackName}-common
+      Description: Shared utilities (DB connection, harassment detection, sentiment analysis)
+      ContentUri: layers/common/
+      CompatibleRuntimes:
+        - python3.12
+    Metadata:
+      BuildMethod: python3.12
+
+  # ---------------------------------------------------------------------------
+  # API Gateway
+  # ---------------------------------------------------------------------------
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date'"
+        AllowOrigin: "'*'"
+      # Throttling (rate limiting)
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          ThrottlingRateLimit: 100
+          ThrottlingBurstLimit: 50
+
+  # ---------------------------------------------------------------------------
+  # Lambda Functions
+  # ---------------------------------------------------------------------------
+  ChatFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-chat
+      CodeUri: functions/chat/
+      Handler: app.lambda_handler
+      Description: AI chat response (Claude API or rule-based fallback)
+      Events:
+        PostChat:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/chat
+            Method: POST
+
+  AnalyzeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-analyze
+      CodeUri: functions/analyze/
+      Handler: app.lambda_handler
+      Description: Harassment detection + sentiment analysis
+      Events:
+        PostAnalyze:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/analyze
+            Method: POST
+
+  HealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-health
+      CodeUri: functions/health/
+      Handler: app.lambda_handler
+      Description: Health check endpoint
+      MemorySize: 128
+      Timeout: 10
+      Events:
+        GetHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /api/health
+            Method: GET
+
+# =============================================================================
+# Outputs
+# =============================================================================
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+
+  DatabaseEndpoint:
+    Description: RDS PostgreSQL endpoint
+    Value: !GetAtt CustomerSupportDB.Endpoint.Address
+
+  AssetsBucketName:
+    Description: S3 bucket for static assets
+    Value: !Ref AssetsBucket
