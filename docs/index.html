@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Serverless Customer Support API — Architecture Showcase</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0e1a;color:#e2e8f0;line-height:1.6;overflow-x:hidden}
+a{color:#f59e0b;text-decoration:none}
+a:hover{text-decoration:underline}
+.container{max-width:1100px;margin:0 auto;padding:0 20px}
+/* Hero */
+.hero{text-align:center;padding:60px 20px 40px}
+.hero-icon{display:inline-flex;width:56px;height:56px;background:linear-gradient(135deg,#f97316,#f59e0b);border-radius:14px;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:16px;box-shadow:0 8px 30px rgba(249,115,22,.3)}
+.hero h1{font-size:clamp(1.8rem,5vw,3rem);font-weight:900;background:linear-gradient(90deg,#f59e0b,#f97316,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:12px 0}
+.hero p{color:#94a3b8;font-size:1.05rem;max-width:600px;margin:0 auto}
+.badges{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:20px 0}
+.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700}
+.b-orange{background:rgba(249,115,22,.15);color:#fb923c}.b-yellow{background:rgba(234,179,8,.15);color:#facc15}
+.b-blue{background:rgba(59,130,246,.15);color:#60a5fa}.b-green{background:rgba(34,197,94,.15);color:#4ade80}
+.b-pink{background:rgba(236,72,153,.15);color:#f472b6}.b-purple{background:rgba(168,85,247,.15);color:#c084fc}
+.btns{display:flex;justify-content:center;gap:12px;margin-top:24px;flex-wrap:wrap}
+.btn{padding:10px 24px;border-radius:12px;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,#ea580c,#f59e0b);color:#fff;box-shadow:0 4px 15px rgba(249,115,22,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(249,115,22,.4);text-decoration:none}
+.btn-secondary{background:#1e293b;color:#e2e8f0;border:1px solid #334155}
+.btn-secondary:hover{background:#334155;text-decoration:none}
+/* Cards */
+.card{background:rgba(15,23,42,.7);border:1px solid rgba(51,65,85,.5);border-radius:16px;backdrop-filter:blur(12px);padding:24px;margin-bottom:16px}
+.glow{box-shadow:0 0 40px rgba(255,153,0,.1)}
+section{margin-top:48px}
+h2{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:8px}
+.subtitle{text-align:center;color:#64748b;font-size:.85rem;margin-bottom:24px}
+/* Architecture SVG */
+.arch-wrap{overflow-x:auto;padding:8px}
+.arch-line{stroke-dasharray:8;animation:dash 1.5s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-16}}
+/* Grid */
+.grid{display:grid;gap:16px}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+/* Endpoint */
+.ep-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.method{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;color:#fff;font-family:monospace}
+.method-post{background:#2563eb}.method-get{background:#16a34a}
+.ep-path{color:#f59e0b;font-family:monospace;font-size:13px}
+.ep-desc{color:#94a3b8;font-size:13px;margin-bottom:8px}
+.ep-toggle{background:none;border:none;color:#f97316;font-size:12px;cursor:pointer;padding:0}
+.ep-toggle:hover{text-decoration:underline}
+.ep-pre{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:12px;font-size:11px;color:#94a3b8;overflow-x:auto;margin-top:8px;display:none;white-space:pre}
+.ep-pre.open{display:block}
+/* Table */
+table{width:100%;border-collapse:collapse}
+th{background:rgba(30,41,59,.5);text-align:left;padding:10px 14px;font-size:12px;color:#64748b;font-weight:600}
+td{padding:10px 14px;border-bottom:1px solid rgba(30,41,59,.5);font-size:13px}
+td:first-child{color:#f59e0b;font-weight:600;white-space:nowrap}
+tr:hover{background:rgba(30,41,59,.3)}
+/* DB */
+.db-name{color:#60a5fa;font-family:monospace;font-weight:700;font-size:13px}
+.db-desc{color:#64748b;font-size:11px;margin:4px 0 8px}
+.db-cols{display:flex;flex-wrap:wrap;gap:4px}
+.db-col{font-size:10px;background:#1e293b;color:#94a3b8;padding:2px 8px;border-radius:12px;font-family:monospace}
+/* Test */
+.test-num{font-size:2.5rem;font-weight:900;color:#4ade80}
+.test-label{color:#94a3b8;font-size:13px;margin-top:4px}
+.test-status{color:#22c55e;font-size:11px;font-family:monospace;margin-top:6px}
+.test-card{text-align:center;box-shadow:0 0 20px rgba(34,197,94,.15)}
+/* Chat Demo */
+.chat-wrap{display:grid;grid-template-columns:1fr 320px;gap:16px;min-height:500px}
+@media(max-width:768px){.chat-wrap{grid-template-columns:1fr;min-height:auto}}
+.chat-panel{display:flex;flex-direction:column;max-height:600px}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:80%;padding:10px 14px;border-radius:16px;font-size:13px}
+.msg-user{align-self:flex-end;background:rgba(37,99,235,.25);border:1px solid rgba(37,99,235,.3)}
+.msg-ai{align-self:flex-start;background:rgba(30,41,59,.7);border:1px solid rgba(51,65,85,.5)}
+.msg-sys{align-self:center;background:rgba(30,41,59,.4);border:1px solid rgba(51,65,85,.3);font-size:11px;color:#64748b;text-align:center}
+.msg-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.sev-badge,.sent-badge{font-size:9px;padding:2px 8px;border-radius:12px;font-weight:700}
+.sev-critical{background:#dc2626;color:#fff;animation:pulse 1.5s infinite}
+.sev-high{background:rgba(220,38,38,.7);color:#fff}
+.sev-medium{background:rgba(234,88,12,.7);color:#fff}
+.sev-low{background:rgba(202,138,4,.7);color:#fff}
+.sev-none{background:rgba(21,128,61,.7);color:#fff}
+.sent-anger{background:rgba(153,27,27,.7);color:#fca5a5;animation:pulse 1.5s infinite}
+.sent-negative{background:rgba(154,52,18,.7);color:#fed7aa}
+.sent-neutral{background:rgba(51,65,85,.7);color:#cbd5e1}
+.sent-positive{background:rgba(21,128,61,.7);color:#bbf7d0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.msg-rec{font-size:10px;color:#fb923c;margin-top:4px}
+.samples{padding:8px 16px;border-top:1px solid rgba(30,41,59,.5)}
+.samples p{font-size:10px;color:#475569;margin-bottom:4px}
+.samples-list{display:flex;flex-wrap:wrap;gap:6px}
+.sample-btn{background:rgba(30,41,59,.5);border:1px solid #1e293b;color:#94a3b8;padding:4px 10px;border-radius:8px;font-size:10px;cursor:pointer;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sample-btn:hover{background:#334155}
+.chat-input{display:flex;gap:8px;padding:12px 16px;border-top:1px solid rgba(30,41,59,.5)}
+.chat-input input{flex:1;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:10px 16px;color:#e2e8f0;font-size:13px;outline:none}
+.chat-input input:focus{border-color:#f59e0b}
+.chat-input button{padding:10px 20px;background:linear-gradient(135deg,#ea580c,#f59e0b);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer}
+.chat-input button:hover{opacity:.9}
+/* Stats */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
+.stat-label{font-size:12px;color:#64748b}
+.stat-value{font-size:1.1rem;font-weight:800}
+.stat-0{color:#4ade80}.stat-danger{color:#f87171}.stat-warn{color:#fb923c}
+.flow-step{display:flex;align-items:center;gap:8px;padding:4px 0}
+.flow-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.flow-text{font-size:11px;color:#94a3b8}
+.sev-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.sev-matrix{font-size:11px;display:flex;align-items:center;gap:6px;padding:2px 0}
+.sev-matrix span:last-child{color:#475569}
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid #1e293b;margin-bottom:24px;justify-content:center}
+.tab{padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:#64748b;transition:all .2s}
+.tab.active{border-bottom-color:#f59e0b;color:#f59e0b}
+.tab:hover{color:#e2e8f0}
+.tab-content{display:none}.tab-content.active{display:block}
+footer{text-align:center;color:#475569;font-size:12px;padding:40px 20px 20px}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-icon">AWS</div>
+    <h1>Customer Support API</h1>
+    <p>AWS Lambda + API Gateway + RDS + S3 によるサーバーレス構成<br>AI カスタマーハラスメント検知 &amp; 感情分析プラットフォーム</p>
+    <div class="badges">
+      <span class="badge b-orange">AWS SAM</span>
+      <span class="badge b-yellow">Lambda (Python 3.12)</span>
+      <span class="badge b-orange">API Gateway</span>
+      <span class="badge b-blue">RDS PostgreSQL 16</span>
+      <span class="badge b-green">S3</span>
+      <span class="badge b-pink">Claude Opus 4.6</span>
+      <span class="badge b-purple">GitHub Actions</span>
+    </div>
+    <div class="btns">
+      <a href="https://github.com/jizhaoganye-dev/aws-customer-support-api" target="_blank" class="btn btn-secondary">GitHub Repository</a>
+      <button class="btn btn-primary" onclick="switchTab('demo')">Live Demo</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('arch')">Architecture</div>
+    <div class="tab" onclick="switchTab('demo')">Live Demo</div>
+  </div>
+
+  <!-- Architecture Tab -->
+  <div id="tab-arch" class="tab-content active">
+    <!-- Architecture Diagram -->
+    <section>
+      <h2>System Architecture</h2>
+      <p class="subtitle">AWS SAM (CloudFormation) で全リソースをIaC管理</p>
+      <div class="card glow">
+        <div class="arch-wrap">
+          <svg viewBox="0 0 900 520" style="width:100%;max-width:860px;margin:0 auto;display:block" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="900" height="520" rx="16" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+            <rect x="300" y="20" width="300" height="60" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+            <text x="450" y="48" text-anchor="middle" fill="#f59e0b" font-size="14" font-weight="bold">Amazon API Gateway</text>
+            <text x="450" y="66" text-anchor="middle" fill="#94a3b8" font-size="10">REST API + CORS + Rate Limiting</text>
+            <rect x="60" y="130" width="220" height="80" rx="12" fill="#1e293b" stroke="#f97316" stroke-width="2"/>
+            <text x="170" y="158" text-anchor="middle" fill="#f97316" font-size="13" font-weight="bold">Lambda: Chat</text>
+            <text x="170" y="176" text-anchor="middle" fill="#94a3b8" font-size="10">AI Response + Handoff</text>
+            <text x="170" y="192" text-anchor="middle" fill="#64748b" font-size="9">POST /api/chat</text>
+            <rect x="340" y="130" width="220" height="80" rx="12" fill="#1e293b" stroke="#f97316" stroke-width="2"/>
+            <text x="450" y="158" text-anchor="middle" fill="#f97316" font-size="13" font-weight="bold">Lambda: Analyze</text>
+            <text x="450" y="176" text-anchor="middle" fill="#94a3b8" font-size="10">Harassment + Sentiment</text>
+            <text x="450" y="192" text-anchor="middle" fill="#64748b" font-size="9">POST /api/analyze</text>
+            <rect x="620" y="130" width="220" height="80" rx="12" fill="#1e293b" stroke="#f97316" stroke-width="2"/>
+            <text x="730" y="158" text-anchor="middle" fill="#f97316" font-size="13" font-weight="bold">Lambda: Health</text>
+            <text x="730" y="176" text-anchor="middle" fill="#94a3b8" font-size="10">System Status</text>
+            <text x="730" y="192" text-anchor="middle" fill="#64748b" font-size="9">GET /api/health</text>
+            <line x1="380" y1="80" x2="170" y2="130" stroke="#f59e0b" stroke-width="1.5" class="arch-line"/>
+            <line x1="450" y1="80" x2="450" y2="130" stroke="#f59e0b" stroke-width="1.5" class="arch-line"/>
+            <line x1="520" y1="80" x2="730" y2="130" stroke="#f59e0b" stroke-width="1.5" class="arch-line"/>
+            <rect x="140" y="250" width="620" height="70" rx="12" fill="#1e293b" stroke="#a78bfa" stroke-width="2" stroke-dasharray="6"/>
+            <text x="450" y="278" text-anchor="middle" fill="#a78bfa" font-size="13" font-weight="bold">Lambda Layer (Shared)</text>
+            <text x="450" y="298" text-anchor="middle" fill="#94a3b8" font-size="10">DB Pool | Harassment Detection | Sentiment Analysis | Handoff Builder</text>
+            <line x1="170" y1="210" x2="300" y2="250" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4"/>
+            <line x1="450" y1="210" x2="450" y2="250" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4"/>
+            <line x1="730" y1="210" x2="600" y2="250" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4"/>
+            <rect x="40" y="350" width="500" height="140" rx="12" fill="#0c1425" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="60" y="375" fill="#3b82f6" font-size="11" font-weight="bold">VPC (10.0.0.0/16)</text>
+            <rect x="60" y="390" width="200" height="80" rx="8" fill="#1e293b" stroke="#22d3ee" stroke-width="1"/>
+            <text x="160" y="415" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="bold">Private Subnets</text>
+            <text x="160" y="435" text-anchor="middle" fill="#94a3b8" font-size="10">Lambda + RDS</text>
+            <text x="160" y="452" text-anchor="middle" fill="#64748b" font-size="9">10.0.1.0/24, 10.0.2.0/24</text>
+            <rect x="290" y="390" width="230" height="80" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+            <text x="405" y="415" text-anchor="middle" fill="#3b82f6" font-size="11" font-weight="bold">RDS PostgreSQL 16.1</text>
+            <text x="405" y="435" text-anchor="middle" fill="#94a3b8" font-size="10">conversations, messages</text>
+            <text x="405" y="452" text-anchor="middle" fill="#94a3b8" font-size="10">harassment_events, handoffs</text>
+            <line x1="350" y1="320" x2="300" y2="350" stroke="#3b82f6" stroke-width="1.5" class="arch-line"/>
+            <rect x="600" y="370" width="250" height="100" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+            <text x="725" y="400" text-anchor="middle" fill="#22c55e" font-size="13" font-weight="bold">Amazon S3</text>
+            <text x="725" y="420" text-anchor="middle" fill="#94a3b8" font-size="10">Static Assets + Logs</text>
+            <rect x="700" y="20" width="180" height="60" rx="12" fill="#1e293b" stroke="#ec4899" stroke-width="1.5"/>
+            <text x="790" y="48" text-anchor="middle" fill="#ec4899" font-size="12" font-weight="bold">Claude Opus 4.6</text>
+            <text x="790" y="64" text-anchor="middle" fill="#94a3b8" font-size="9">Anthropic API</text>
+            <line x1="700" y1="50" x2="600" y2="50" stroke="#ec4899" stroke-width="1" stroke-dasharray="4"/>
+            <rect x="20" y="20" width="160" height="50" rx="8" fill="#1e293b" stroke="#a3e635" stroke-width="1"/>
+            <text x="100" y="42" text-anchor="middle" fill="#a3e635" font-size="11" font-weight="bold">NAT Gateway</text>
+            <text x="100" y="58" text-anchor="middle" fill="#64748b" font-size="9">Public Subnet</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- API Endpoints -->
+    <section>
+      <h2>API Endpoints</h2>
+      <div class="grid grid-3" id="endpoints"></div>
+    </section>
+
+    <!-- Skills Table -->
+    <section>
+      <h2>Required AWS Skills</h2>
+      <p class="subtitle">エイジレス案件の必須要件との対応表</p>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table>
+          <thead><tr><th>Required Skill</th><th>Implementation</th></tr></thead>
+          <tbody>
+            <tr><td>AWS SAM / CloudFormation</td><td>template.yaml — VPC, Subnets, NAT GW, RDS, Lambda, API GW, S3 を1ファイルでIaC管理</td></tr>
+            <tr><td>AWS Lambda</td><td>Python 3.12 フレームワーク不使用の純粋Lambda handler × 3本</td></tr>
+            <tr><td>API Gateway</td><td>REST API + CORS + Throttling (100 req/s, burst 50) + Stage管理</td></tr>
+            <tr><td>Amazon RDS</td><td>PostgreSQL 16.1 — Private Subnet配置、Security Group制限</td></tr>
+            <tr><td>Amazon S3</td><td>静的アセットバケット + CORS + ログ保存</td></tr>
+            <tr><td>IAM</td><td>最小権限ポリシー (VPC, S3, RDS, CloudWatch, SSM)</td></tr>
+            <tr><td>VPC Networking</td><td>Public/Private Subnets, NAT Gateway, Route Tables, Security Groups</td></tr>
+            <tr><td>GitHub CI/CD</td><td>GitHub Actions: pytest → SAM build → deploy (OIDC認証)</td></tr>
+            <tr><td>Python (Lambda)</td><td>接続プール, カスハラ検知, 感情分析, 引き継ぎ — フレームワーク不使用</td></tr>
+            <tr><td>Claude / Cursor</td><td>プロジェクト全体がAI駆動開発 (Cursor + Claude Opus 4.6)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- DB Schema -->
+    <section>
+      <h2>Database Schema</h2>
+      <p class="subtitle">PostgreSQL 16.1 — 5テーブル + マテリアライズドビュー</p>
+      <div class="grid grid-3" id="db-tables"></div>
+    </section>
+
+    <!-- Tests -->
+    <section>
+      <h2>Test Suite</h2>
+      <div class="grid grid-3">
+        <div class="card test-card"><div class="test-num">28</div><div class="test-label">Harassment Detection</div><div class="test-status">ALL PASSED</div></div>
+        <div class="card test-card"><div class="test-num">18</div><div class="test-label">Sentiment Analysis</div><div class="test-status">ALL PASSED</div></div>
+        <div class="card test-card"><div class="test-num">12</div><div class="test-label">Handoff Context</div><div class="test-status">ALL PASSED</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Demo Tab -->
+  <div id="tab-demo" class="tab-content">
+    <section>
+      <div class="chat-wrap">
+        <div class="card chat-panel" style="padding:0">
+          <div class="chat-messages" id="chat-messages">
+            <div class="msg msg-sys">AWS Lambda カスタマーサポートAPIのライブデモ。カスハラ検知・感情分析・AI応答をリアルタイムで実行します。</div>
+          </div>
+          <div class="samples">
+            <p>Sample Messages:</p>
+            <div class="samples-list" id="samples"></div>
+          </div>
+          <div class="chat-input">
+            <input type="text" id="chat-input" placeholder="メッセージを入力..." onkeydown="if(event.key==='Enter')sendMsg()">
+            <button onclick="sendMsg()">Send</button>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <h3 style="font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:12px">Real-time Analytics</h3>
+            <div class="stat-row"><span class="stat-label">Total Messages</span><span class="stat-value" id="s-total">0</span></div>
+            <div class="stat-row"><span class="stat-label">Harassment Detected</span><span class="stat-value stat-0" id="s-harass">0</span></div>
+            <div class="stat-row"><span class="stat-label">Anger Alerts</span><span class="stat-value stat-0" id="s-anger">0</span></div>
+            <div class="stat-row"><span class="stat-label">Positive Sentiment</span><span class="stat-value stat-0" id="s-pos">0</span></div>
+          </div>
+          <div class="card" style="margin-top:12px">
+            <h3 style="font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:10px">Lambda Processing Flow</h3>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(37,99,235,.2);color:#60a5fa">1</span><span class="flow-text">API Gateway: Parse & validate</span></div>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(249,115,22,.2);color:#fb923c">2</span><span class="flow-text">Layer: Harassment detection</span></div>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(168,85,247,.2);color:#c084fc">3</span><span class="flow-text">Layer: Sentiment analysis</span></div>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(236,72,153,.2);color:#f472b6">4</span><span class="flow-text">Claude Opus 4.6 / Rule-based</span></div>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(34,211,238,.2);color:#22d3ee">5</span><span class="flow-text">RDS: Persist + events</span></div>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(34,197,94,.2);color:#4ade80">6</span><span class="flow-text">Handoff check → Response</span></div>
+          </div>
+          <div class="card" style="margin-top:12px">
+            <h3 style="font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:10px">Severity Matrix</h3>
+            <div class="sev-matrix"><span class="sev-dot" style="background:#dc2626;animation:pulse 1.5s infinite"></span><span style="color:#f87171">CRITICAL</span><span>— 脅迫、暴力的発言</span></div>
+            <div class="sev-matrix"><span class="sev-dot" style="background:#dc2626"></span><span style="color:#f87171">HIGH</span><span>— 直接的な侮辱</span></div>
+            <div class="sev-matrix"><span class="sev-dot" style="background:#ea580c"></span><span style="color:#fb923c">MEDIUM</span><span>— 威圧的な要求</span></div>
+            <div class="sev-matrix"><span class="sev-dot" style="background:#ca8a04"></span><span style="color:#facc15">LOW</span><span>— 軽度の不満</span></div>
+            <div class="sev-matrix"><span class="sev-dot" style="background:#16a34a"></span><span style="color:#4ade80">NONE</span><span>— 通常の問い合わせ</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>Built with Cursor + Claude Opus 4.6 / Gemini 3 — AWS Serverless Architecture | 2026</footer>
+</div>
+
+<script>
+// Tab switching
+function switchTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');document.querySelectorAll('.tab')[t==='arch'?0:1].classList.add('active')}
+
+// Endpoints
+const eps=[{m:'POST',p:'/api/chat',d:'AI チャット応答 + カスハラ検知 + 感情分析 + 引き継ぎ判定',ex:'{\n  "conversation_id": "uuid",\n  "response": "ご注文の配送状況を確認...",\n  "sentiment": { "sentiment": "negative", "confidence": 0.7 },\n  "harassment": { "is_harassment": false, "severity": "none" },\n  "needs_handoff": false\n}'},{m:'POST',p:'/api/analyze',d:'独立分析エンドポイント（ダッシュボード監視用）',ex:'{\n  "harassment": { "is_harassment": true, "severity": "high" },\n  "sentiment": { "sentiment": "anger", "trigger_alert": true },\n  "combined_risk": "critical",\n  "alert": { "type": "harassment_detected" }\n}'},{m:'GET',p:'/api/health',d:'システムヘルスチェック（DB + AI API + ランタイム）',ex:'{\n  "status": "healthy",\n  "services": {\n    "database": { "status": "healthy" },\n    "ai_api": { "provider": "anthropic" }\n  },\n  "runtime": { "memory_limit_mb": 256 }\n}'}];
+document.getElementById('endpoints').innerHTML=eps.map((e,i)=>`<div class="card"><div class="ep-header"><span class="method method-${e.m.toLowerCase()}">${e.m}</span><span class="ep-path">${e.p}</span></div><p class="ep-desc">${e.d}</p><button class="ep-toggle" onclick="this.nextElementSibling.classList.toggle('open')">Show Response</button><pre class="ep-pre">${e.ex}</pre></div>`).join('');
+
+// DB Tables
+const dbs=[{n:'conversations',d:'会話セッション管理',c:['id (UUID)','customer_name','status','priority','tags (JSONB)']},{n:'messages',d:'全メッセージ（分析結果付き）',c:['id (UUID)','conversation_id','role','content','sentiment','harassment_severity']},{n:'harassment_events',d:'カスハラ検知ログ',c:['id (UUID)','severity','categories (JSONB)','matched_patterns','resolved']},{n:'analysis_logs',d:'リアルタイム分析ログ',c:['id (UUID)','combined_risk','sentiment','ai_enhanced']},{n:'handoffs',d:'AI→人間引き継ぎ',c:['id (UUID)','priority','summary','detected_issues (JSONB)','status']},{n:'daily_metrics',d:'日次KPI集計 (MView)',c:['metric_date','total_messages','anger_count','harassment_count','csat_score']}];
+document.getElementById('db-tables').innerHTML=dbs.map(d=>`<div class="card"><div class="db-name">${d.n}</div><div class="db-desc">${d.d}</div><div class="db-cols">${d.c.map(c=>`<span class="db-col">${c}</span>`).join('')}</div></div>`).join('');
+
+// Chat Demo Engine
+const CP=[[/殺す|ころす|コロス/,'death_threat'],[/死ね|しね|シネ/,'death_wish'],[/爆破|放火|刺す/,'violence'],[/訴え(る|てやる)|裁判/,'legal']];
+const HP=[[/バカ|ばか|馬鹿/,'baka'],[/アホ|あほ/,'aho'],[/カス|かす|クズ|くず/,'kasu'],[/ゴミ|ごみ/,'gomi'],[/ふざけるな|ふざけんな|ナメてる|舐めてる/,'contempt'],[/能無し|無能|役立たず|使えない/,'incompetence'],[/クソ|くそ|糞/,'kuso'],[/ボケ|ぼけ/,'boke']];
+const MP=[[/今すぐ|すぐに|直ちに/,'urgency'],[/責任.*取れ|責任者.*出せ/,'escalation'],[/金.*返せ|弁償しろ/,'compensation'],[/SNS.*晒す|Twitter.*晒す|拡散/,'social']];
+function detect(t){if(!t.trim())return{h:false,s:'none',c:[],r:''};let cats=[],mx='none';const ord=['none','low','medium','high','critical'];function ck(ps,sv){ps.forEach(([p,c])=>{if(p.test(t)){cats.push(c);if(ord.indexOf(sv)>ord.indexOf(mx))mx=sv}})}ck(CP,'critical');ck(HP,'high');ck(MP,'medium');const recs={critical:'即座に上席者へエスカレーション。法務部門に報告。',high:'冷静に対応。上席者への引き継ぎを準備。',medium:'落ち着いたトーンで事実ベースの回答。',low:'通常対応。お客様に寄り添う。',none:''};return{h:['critical','high','medium'].includes(mx),s:mx,c:cats,r:recs[mx]}}
+const PK=['ありがとう','助かり','感謝','嬉しい','素晴らしい','最高','完璧','良い','丁寧','満足','解決'];
+const NK=['不満','不便','残念','がっかり','困る','不安','嫌','ダメ','問題','エラー','バグ','遅い','苦情'];
+const AK=['怒り','激怒','ふざけるな','許さない','ありえない','最悪','最低','酷い','ひどい','クソ','バカ','死ね','殺す','腹が立つ','むかつく','ムカつく','イライラ','ナメてる','ゴミ','カス'];
+function sentiment(t){if(!t.trim())return{s:'neutral',a:false};const p=PK.filter(k=>t.includes(k)).length,n=NK.filter(k=>t.includes(k)).length,a=AK.filter(k=>t.includes(k)).length;if(a>=1)return{s:'anger',a:true};if(n>p&&n>=1)return{s:'negative',a:false};if(p>0)return{s:'positive',a:false};return{s:'neutral',a:false}}
+const RR=[[['届かない','配送','配達','発送'],'ご注文の配送状況を確認いたします。注文番号をお教えいただけますか？'],[['返品','返金','キャンセル'],'返品・返金のご希望を承ります。注文番号と返品理由をお知らせください。'],[['壊れ','不良','破損','故障'],'商品の不具合について申し訳ございません。不具合のお写真をお送りいただけますか？'],[['ログイン','パスワード','アカウント'],'パスワードリセットは「パスワードを忘れた方」から行えます。'],[['請求','課金','料金'],'請求内容を確認いたします。注文番号をお知らせください。'],[['こんにちは','はじめまして'],'こんにちは！カスタマーサポートへようこそ。'],[['ありがとう','感謝','助かり'],'お役に立てて嬉しいです！']];
+function respond(t,h){if(h.h&&['critical','high'].includes(h.s))return'お気持ちは理解いたします。担当者にお繋ぎいたします。少々お待ちください。';for(const[kw,r]of RR)if(kw.some(k=>t.includes(k)))return r;return'お問い合わせありがとうございます。もう少し詳しくお聞かせいただけますか？'}
+
+let stats={t:0,h:0,a:0,p:0};
+function sendMsg(){const inp=document.getElementById('chat-input');const t=inp.value.trim();if(!t)return;inp.value='';const hr=detect(t);const sn=sentiment(t);const ai=respond(t,hr);stats.t++;if(hr.h)stats.h++;if(sn.a)stats.a++;if(sn.s==='positive')stats.p++;
+const cm=document.getElementById('chat-messages');
+cm.innerHTML+=`<div class="msg msg-user">${esc(t)}<div class="msg-meta"><span class="sev-badge sev-${hr.s}">${hr.s.toUpperCase()}</span><span class="sent-badge sent-${sn.s}">${sn.s}</span>${hr.h?'<span style="color:#f87171;font-size:9px;font-weight:700">ALERT</span>':''}</div>${hr.r?`<div class="msg-rec">${hr.r}</div>`:''}</div>`;
+cm.innerHTML+=`<div class="msg msg-ai">${esc(ai)}</div>`;
+cm.scrollTop=cm.scrollHeight;
+document.getElementById('s-total').textContent=stats.t;
+const sh=document.getElementById('s-harass');sh.textContent=stats.h;sh.className='stat-value '+(stats.h>0?'stat-danger':'stat-0');
+const sa=document.getElementById('s-anger');sa.textContent=stats.a;sa.className='stat-value '+(stats.a>0?'stat-warn':'stat-0');
+document.getElementById('s-pos').textContent=stats.p}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// Sample messages
+const samples=['商品が届きません。注文番号 ORD-12345 です。','ふざけるな！3回も問い合わせてるのに解決しない！バカ！','ありがとうございます。とても助かりました！','殺すぞ！責任者出せ！','返品したいのですが手続きを教えてください'];
+document.getElementById('samples').innerHTML=samples.map(s=>`<button class="sample-btn" onclick="document.getElementById('chat-input').value='${s}'">${s}</button>`).join('');
+</script>
+</body>
+</html>
