@@ -1,0 +1,25 @@
+# SAM CLI configuration
+# Usage: sam deploy (uses these defaults)
+
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "customer-support-api"
+resolve_s3 = true
+s3_prefix = "customer-support-api"
+region = "ap-northeast-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "Environment=\"production\" DBUsername=\"csadmin\" DBPassword=\"CHANGE_ME_BEFORE_DEPLOY\""
+
+[default.build.parameters]
+use_container = true
+
+[staging.deploy.parameters]
+stack_name = "customer-support-api-staging"
+resolve_s3 = true
+s3_prefix = "customer-support-api-staging"
+region = "ap-northeast-1"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "Environment=\"staging\" DBUsername=\"csadmin\" DBPassword=\"CHANGE_ME_BEFORE_DEPLOY\""
