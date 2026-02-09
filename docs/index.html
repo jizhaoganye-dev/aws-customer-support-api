@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AWS Serverless Customer Support API — Architecture Showcase</title>
+<title>AWS サーバーレス カスタマーサポートAPI — アーキテクチャ紹介</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0e1a;color:#e2e8f0;line-height:1.6;overflow-x:hidden}
@@ -124,8 +124,8 @@ footer{text-align:center;color:#475569;font-size:12px;padding:40px 20px 20px}
   <!-- Hero -->
   <div class="hero">
     <div class="hero-icon">AWS</div>
-    <h1>Customer Support API</h1>
-    <p>AWS Lambda + API Gateway + RDS + S3 によるサーバーレス構成<br>AI カスタマーハラスメント検知 &amp; 感情分析プラットフォーム</p>
+    <h1>AIカスタマーサポートAPI</h1>
+    <p>AWS Lambda + API Gateway + RDS + S3 によるサーバーレス構成<br>AIカスタマーハラスメント検知 &amp; 感情分析プラットフォーム</p>
     <div class="badges">
       <span class="badge b-orange">AWS SAM</span>
       <span class="badge b-yellow">Lambda (Python 3.12)</span>
@@ -136,22 +136,22 @@ footer{text-align:center;color:#475569;font-size:12px;padding:40px 20px 20px}
       <span class="badge b-purple">GitHub Actions</span>
     </div>
     <div class="btns">
-      <a href="https://github.com/jizhaoganye-dev/aws-customer-support-api" target="_blank" class="btn btn-secondary">GitHub Repository</a>
-      <button class="btn btn-primary" onclick="switchTab('demo')">Live Demo</button>
+      <a href="https://github.com/jizhaoganye-dev/aws-customer-support-api" target="_blank" class="btn btn-secondary">GitHubリポジトリ</a>
+      <button class="btn btn-primary" onclick="switchTab('demo')">ライブデモ</button>
     </div>
   </div>
 
   <!-- Tabs -->
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('arch')">Architecture</div>
-    <div class="tab" onclick="switchTab('demo')">Live Demo</div>
+    <div class="tab active" onclick="switchTab('arch')">アーキテクチャ</div>
+    <div class="tab" onclick="switchTab('demo')">ライブデモ</div>
   </div>
 
   <!-- Architecture Tab -->
   <div id="tab-arch" class="tab-content active">
     <!-- Architecture Diagram -->
     <section>
-      <h2>System Architecture</h2>
+      <h2>システムアーキテクチャ</h2>
       <p class="subtitle">AWS SAM (CloudFormation) で全リソースをIaC管理</p>
       <div class="card glow">
         <div class="arch-wrap">
@@ -209,17 +209,17 @@ footer{text-align:center;color:#475569;font-size:12px;padding:40px 20px 20px}
 
     <!-- API Endpoints -->
     <section>
-      <h2>API Endpoints</h2>
+      <h2>APIエンドポイント</h2>
       <div class="grid grid-3" id="endpoints"></div>
     </section>
 
     <!-- Skills Table -->
     <section>
-      <h2>Required AWS Skills</h2>
-      <p class="subtitle">エイジレス案件の必須要件との対応表</p>
+      <h2>AWSスキル対応表</h2>
+      <p class="subtitle">案件の必須要件との対応</p>
       <div class="card" style="padding:0;overflow:hidden">
         <table>
-          <thead><tr><th>Required Skill</th><th>Implementation</th></tr></thead>
+          <thead><tr><th>必須スキル</th><th>実装内容</th></tr></thead>
           <tbody>
             <tr><td>AWS SAM / CloudFormation</td><td>template.yaml — VPC, Subnets, NAT GW, RDS, Lambda, API GW, S3 を1ファイルでIaC管理</td></tr>
             <tr><td>AWS Lambda</td><td>Python 3.12 フレームワーク不使用の純粋Lambda handler × 3本</td></tr>
@@ -227,9 +227,9 @@ footer{text-align:center;color:#475569;font-size:12px;padding:40px 20px 20px}
             <tr><td>Amazon RDS</td><td>PostgreSQL 16.1 — Private Subnet配置、Security Group制限</td></tr>
             <tr><td>Amazon S3</td><td>静的アセットバケット + CORS + ログ保存</td></tr>
             <tr><td>IAM</td><td>最小権限ポリシー (VPC, S3, RDS, CloudWatch, SSM)</td></tr>
-            <tr><td>VPC Networking</td><td>Public/Private Subnets, NAT Gateway, Route Tables, Security Groups</td></tr>
-            <tr><td>GitHub CI/CD</td><td>GitHub Actions: pytest → SAM build → deploy (OIDC認証)</td></tr>
-            <tr><td>Python (Lambda)</td><td>接続プール, カスハラ検知, 感情分析, 引き継ぎ — フレームワーク不使用</td></tr>
+            <tr><td>VPCネットワーク</td><td>パブリック/プライベートサブネット、NATゲートウェイ、ルートテーブル、セキュリティグループ</td></tr>
+            <tr><td>GitHub CI/CD</td><td>GitHub Actions: テスト → SAMビルド → デプロイ (OIDC認証)</td></tr>
+            <tr><td>Python (Lambda)</td><td>接続プール、カスハラ検知、感情分析、引き継ぎ — フレームワーク不使用</td></tr>
             <tr><td>Claude / Cursor</td><td>プロジェクト全体がAI駆動開発 (Cursor + Claude Opus 4.6)</td></tr>
           </tbody>
         </table>
@@ -238,18 +238,18 @@ footer{text-align:center;color:#475569;font-size:12px;padding:40px 20px 20px}
 
     <!-- DB Schema -->
     <section>
-      <h2>Database Schema</h2>
+      <h2>データベース設計</h2>
       <p class="subtitle">PostgreSQL 16.1 — 5テーブル + マテリアライズドビュー</p>
       <div class="grid grid-3" id="db-tables"></div>
     </section>
 
     <!-- Tests -->
     <section>
-      <h2>Test Suite</h2>
+      <h2>テストスイート</h2>
       <div class="grid grid-3">
-        <div class="card test-card"><div class="test-num">28</div><div class="test-label">Harassment Detection</div><div class="test-status">ALL PASSED</div></div>
-        <div class="card test-card"><div class="test-num">18</div><div class="test-label">Sentiment Analysis</div><div class="test-status">ALL PASSED</div></div>
-        <div class="card test-card"><div class="test-num">12</div><div class="test-label">Handoff Context</div><div class="test-status">ALL PASSED</div></div>
+        <div class="card test-card"><div class="test-num">28</div><div class="test-label">カスハラ検知</div><div class="test-status">全件合格</div></div>
+        <div class="card test-card"><div class="test-num">18</div><div class="test-label">感情分析</div><div class="test-status">全件合格</div></div>
+        <div class="card test-card"><div class="test-num">12</div><div class="test-label">引き継ぎ構築</div><div class="test-status">全件合格</div></div>
       </div>
     </section>
   </div>
@@ -263,33 +263,33 @@ footer{text-align:center;color:#475569;font-size:12px;padding:40px 20px 20px}
             <div class="msg msg-sys">AWS Lambda カスタマーサポートAPIのライブデモ。カスハラ検知・感情分析・AI応答をリアルタイムで実行します。</div>
           </div>
           <div class="samples">
-            <p>Sample Messages:</p>
+            <p>サンプルメッセージ:</p>
             <div class="samples-list" id="samples"></div>
           </div>
           <div class="chat-input">
             <input type="text" id="chat-input" placeholder="メッセージを入力..." onkeydown="if(event.key==='Enter')sendMsg()">
-            <button onclick="sendMsg()">Send</button>
+            <button onclick="sendMsg()">送信</button>
           </div>
         </div>
         <div>
           <div class="card">
-            <h3 style="font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:12px">Real-time Analytics</h3>
-            <div class="stat-row"><span class="stat-label">Total Messages</span><span class="stat-value" id="s-total">0</span></div>
-            <div class="stat-row"><span class="stat-label">Harassment Detected</span><span class="stat-value stat-0" id="s-harass">0</span></div>
-            <div class="stat-row"><span class="stat-label">Anger Alerts</span><span class="stat-value stat-0" id="s-anger">0</span></div>
-            <div class="stat-row"><span class="stat-label">Positive Sentiment</span><span class="stat-value stat-0" id="s-pos">0</span></div>
+            <h3 style="font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:12px">リアルタイム分析</h3>
+            <div class="stat-row"><span class="stat-label">メッセージ総数</span><span class="stat-value" id="s-total">0</span></div>
+            <div class="stat-row"><span class="stat-label">カスハラ検知数</span><span class="stat-value stat-0" id="s-harass">0</span></div>
+            <div class="stat-row"><span class="stat-label">怒りアラート</span><span class="stat-value stat-0" id="s-anger">0</span></div>
+            <div class="stat-row"><span class="stat-label">ポジティブ感情</span><span class="stat-value stat-0" id="s-pos">0</span></div>
           </div>
           <div class="card" style="margin-top:12px">
-            <h3 style="font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:10px">Lambda Processing Flow</h3>
-            <div class="flow-step"><span class="flow-num" style="background:rgba(37,99,235,.2);color:#60a5fa">1</span><span class="flow-text">API Gateway: Parse & validate</span></div>
-            <div class="flow-step"><span class="flow-num" style="background:rgba(249,115,22,.2);color:#fb923c">2</span><span class="flow-text">Layer: Harassment detection</span></div>
-            <div class="flow-step"><span class="flow-num" style="background:rgba(168,85,247,.2);color:#c084fc">3</span><span class="flow-text">Layer: Sentiment analysis</span></div>
-            <div class="flow-step"><span class="flow-num" style="background:rgba(236,72,153,.2);color:#f472b6">4</span><span class="flow-text">Claude Opus 4.6 / Rule-based</span></div>
-            <div class="flow-step"><span class="flow-num" style="background:rgba(34,211,238,.2);color:#22d3ee">5</span><span class="flow-text">RDS: Persist + events</span></div>
-            <div class="flow-step"><span class="flow-num" style="background:rgba(34,197,94,.2);color:#4ade80">6</span><span class="flow-text">Handoff check → Response</span></div>
+            <h3 style="font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:10px">Lambda処理フロー</h3>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(37,99,235,.2);color:#60a5fa">1</span><span class="flow-text">API Gateway: リクエスト解析・検証</span></div>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(249,115,22,.2);color:#fb923c">2</span><span class="flow-text">共有Layer: カスハラ検知</span></div>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(168,85,247,.2);color:#c084fc">3</span><span class="flow-text">共有Layer: 感情分析</span></div>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(236,72,153,.2);color:#f472b6">4</span><span class="flow-text">Claude Opus 4.6 / ルールベース応答</span></div>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(34,211,238,.2);color:#22d3ee">5</span><span class="flow-text">RDS: 会話・イベント永続化</span></div>
+            <div class="flow-step"><span class="flow-num" style="background:rgba(34,197,94,.2);color:#4ade80">6</span><span class="flow-text">引き継ぎ判定 → レスポンス返却</span></div>
           </div>
           <div class="card" style="margin-top:12px">
-            <h3 style="font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:10px">Severity Matrix</h3>
+            <h3 style="font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:10px">重大度マトリクス</h3>
             <div class="sev-matrix"><span class="sev-dot" style="background:#dc2626;animation:pulse 1.5s infinite"></span><span style="color:#f87171">CRITICAL</span><span>— 脅迫、暴力的発言</span></div>
             <div class="sev-matrix"><span class="sev-dot" style="background:#dc2626"></span><span style="color:#f87171">HIGH</span><span>— 直接的な侮辱</span></div>
             <div class="sev-matrix"><span class="sev-dot" style="background:#ea580c"></span><span style="color:#fb923c">MEDIUM</span><span>— 威圧的な要求</span></div>
@@ -301,7 +301,7 @@ footer{text-align:center;color:#475569;font-size:12px;padding:40px 20px 20px}
     </section>
   </div>
 
-  <footer>Built with Cursor + Claude Opus 4.6 / Gemini 3 — AWS Serverless Architecture | 2026</footer>
+  <footer>Cursor + Claude Opus 4.6 / Gemini 3 で構築 — AWSサーバーレスアーキテクチャ | 2026</footer>
 </div>
 
 <script>
@@ -309,8 +309,8 @@ footer{text-align:center;color:#475569;font-size:12px;padding:40px 20px 20px}
 function switchTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');document.querySelectorAll('.tab')[t==='arch'?0:1].classList.add('active')}
 
 // Endpoints
-const eps=[{m:'POST',p:'/api/chat',d:'AI チャット応答 + カスハラ検知 + 感情分析 + 引き継ぎ判定',ex:'{\n  "conversation_id": "uuid",\n  "response": "ご注文の配送状況を確認...",\n  "sentiment": { "sentiment": "negative", "confidence": 0.7 },\n  "harassment": { "is_harassment": false, "severity": "none" },\n  "needs_handoff": false\n}'},{m:'POST',p:'/api/analyze',d:'独立分析エンドポイント（ダッシュボード監視用）',ex:'{\n  "harassment": { "is_harassment": true, "severity": "high" },\n  "sentiment": { "sentiment": "anger", "trigger_alert": true },\n  "combined_risk": "critical",\n  "alert": { "type": "harassment_detected" }\n}'},{m:'GET',p:'/api/health',d:'システムヘルスチェック（DB + AI API + ランタイム）',ex:'{\n  "status": "healthy",\n  "services": {\n    "database": { "status": "healthy" },\n    "ai_api": { "provider": "anthropic" }\n  },\n  "runtime": { "memory_limit_mb": 256 }\n}'}];
-document.getElementById('endpoints').innerHTML=eps.map((e,i)=>`<div class="card"><div class="ep-header"><span class="method method-${e.m.toLowerCase()}">${e.m}</span><span class="ep-path">${e.p}</span></div><p class="ep-desc">${e.d}</p><button class="ep-toggle" onclick="this.nextElementSibling.classList.toggle('open')">Show Response</button><pre class="ep-pre">${e.ex}</pre></div>`).join('');
+const eps=[{m:'POST',p:'/api/chat',d:'AIチャット応答 + カスハラ検知 + 感情分析 + 引き継ぎ判定',ex:'{\n  "conversation_id": "uuid",\n  "response": "ご注文の配送状況を確認...",\n  "sentiment": { "sentiment": "negative", "confidence": 0.7 },\n  "harassment": { "is_harassment": false, "severity": "none" },\n  "needs_handoff": false\n}'},{m:'POST',p:'/api/analyze',d:'独立分析エンドポイント（ダッシュボード監視用）',ex:'{\n  "harassment": { "is_harassment": true, "severity": "high" },\n  "sentiment": { "sentiment": "anger", "trigger_alert": true },\n  "combined_risk": "critical",\n  "alert": { "type": "harassment_detected" }\n}'},{m:'GET',p:'/api/health',d:'システムヘルスチェック（DB + AI API + ランタイム）',ex:'{\n  "status": "healthy",\n  "services": {\n    "database": { "status": "healthy" },\n    "ai_api": { "provider": "anthropic" }\n  },\n  "runtime": { "memory_limit_mb": 256 }\n}'}];
+document.getElementById('endpoints').innerHTML=eps.map((e,i)=>`<div class="card"><div class="ep-header"><span class="method method-${e.m.toLowerCase()}">${e.m}</span><span class="ep-path">${e.p}</span></div><p class="ep-desc">${e.d}</p><button class="ep-toggle" onclick="this.nextElementSibling.classList.toggle('open')">レスポンス例を表示</button><pre class="ep-pre">${e.ex}</pre></div>`).join('');
 
 // DB Tables
 const dbs=[{n:'conversations',d:'会話セッション管理',c:['id (UUID)','customer_name','status','priority','tags (JSONB)']},{n:'messages',d:'全メッセージ（分析結果付き）',c:['id (UUID)','conversation_id','role','content','sentiment','harassment_severity']},{n:'harassment_events',d:'カスハラ検知ログ',c:['id (UUID)','severity','categories (JSONB)','matched_patterns','resolved']},{n:'analysis_logs',d:'リアルタイム分析ログ',c:['id (UUID)','combined_risk','sentiment','ai_enhanced']},{n:'handoffs',d:'AI→人間引き継ぎ',c:['id (UUID)','priority','summary','detected_issues (JSONB)','status']},{n:'daily_metrics',d:'日次KPI集計 (MView)',c:['metric_date','total_messages','anger_count','harassment_count','csat_score']}];
